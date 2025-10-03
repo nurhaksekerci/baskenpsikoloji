@@ -31,6 +31,13 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = [
+    'https://baskentpsikoloji.pythonanywhere.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000'
+]
+
 
 # Application definition
 
