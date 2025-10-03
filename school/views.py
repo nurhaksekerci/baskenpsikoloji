@@ -3,8 +3,13 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
+from django.conf import settings
 from .models import Student, Attendance
+from .sms_service import sms_service
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 def index(request):
@@ -56,6 +61,19 @@ def attendance_toggle(request):
         # Giriş/çıkış toggle işlemi
         attendance = Attendance.toggle_attendance(student)
         
+        # SMS bildirimi gönder (eğer aktifse)
+        sms_result = None
+        if getattr(settings, 'SMS_ENABLED', True):
+            try:
+                sms_result = sms_service.send_attendance_notification(student, attendance)
+                if sms_result['success']:
+                    logger.info(f"SMS başarıyla gönderildi: {student.full_name}")
+                else:
+                    logger.warning(f"SMS gönderim hatası: {sms_result['error']}")
+            except Exception as e:
+                logger.error(f"SMS gönderim exception: {str(e)}")
+                sms_result = {'success': False, 'error': str(e)}
+        
         # Son durumu kontrol et
         last_entry = Attendance.get_last_entry(student)
         current_status = 'içeride' if last_entry and last_entry.entry_type == 'entry' else 'dışarıda'
@@ -76,6 +94,10 @@ def attendance_toggle(request):
                 'timestamp': attendance.timestamp.isoformat(),
                 'date': attendance.date.isoformat(),
                 'current_status': current_status
+            },
+            'sms_notification': {
+                'sent': sms_result['success'] if sms_result else False,
+                'error': sms_result['error'] if sms_result and not sms_result['success'] else None
             },
             'processed_at': timezone.now().isoformat()
         }
@@ -167,5 +189,62 @@ def student_status(request, id_number):
             'message': f'Sunucu hatası: {str(e)}'
         }, status=500)
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def test_sms(request):
+    """SMS testi endpoint'i"""
+    try:
+        data = json.loads(request.body) if request.body else {}
+        phone_number = data.get('phone_number')
+        
+        if not phone_number:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Telefon numarası gerekli'
+            }, status=400)
+        
+        # Test SMS gönder
+        result = sms_service.send_test_sms(phone_number)
+        
+        return JsonResponse({
+            'status': 'success' if result['success'] else 'error',
+            'message': 'Test SMS gönderildi' if result['success'] else result['error'],
+            'details': result
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'SMS test hatası: {str(e)}'
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def sms_balance(request):
+    """SMS bakiye sorgulama"""
+    try:
+        result = sms_service.netgsm.get_balance()
+        
+        return JsonResponse({
+            'status': 'success' if result['success'] else 'error',
+            'balance': result.get('balance', 0),
+            'currency': result.get('currency', 'TL'),
+            'message': result.get('error', 'Bakiye başarıyla sorgulandı')
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Bakiye sorgulama hatası: {str(e)}'
+        }, status=500)
+
 def logout(request):
     pass
+
+def sms_test_page(request):
+    """SMS test sayfası"""
+    context = {
+        'netgsm_username': getattr(settings, 'NETGSM_USERNAME', 'Tanımlı değil'),
+        'netgsm_header': getattr(settings, 'NETGSM_HEADER', 'Tanımlı değil'),
+    }
+    return render(request, 'auth/sms_test.html', context)

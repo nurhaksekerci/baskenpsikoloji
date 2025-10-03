@@ -221,6 +221,15 @@ LOGGING = {
 QR_CODE_SIZE = int(os.getenv('QR_CODE_SIZE', '180'))
 QR_CODE_MARGIN = int(os.getenv('QR_CODE_MARGIN', '1'))
 QR_CODE_CACHE_TIMEOUT = int(os.getenv('QR_CODE_CACHE_TIMEOUT', '3600'))
+
+# NETGSM SMS Settings
+NETGSM_USERNAME = os.getenv('NETGSM_USERNAME', '')
+NETGSM_PASSWORD = os.getenv('NETGSM_PASSWORD', '')
+NETGSM_HEADER = os.getenv('NETGSM_HEADER', '')
+
+# SMS Notification Settings
+SMS_ENABLED = os.getenv('SMS_ENABLED', 'True').lower() == 'true'
+SMS_TEST_MODE = os.getenv('SMS_TEST_MODE', 'False').lower() == 'true'
 PAGINATION_COUNT = int(os.getenv('PAGINATION_COUNT', '25'))
 
 # Default primary key field type
