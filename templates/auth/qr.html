@@ -340,83 +340,21 @@
                 <h6><i class="fas fa-info-circle me-2"></i>QR Kod Bilgileri</h6>
                 <p class="mb-1"><strong>URL:</strong></p>
                 <div class="qr-url" id="qrUrl">-</div>
-                <p class="mb-0 mt-2"><strong>Oluşturulma:</strong> <span id="qrTimestamp">-</span></p>
             </div>
-            
-            <div class="qr-instructions">
-                <h6><i class="fas fa-list-ol me-2"></i>Nasıl Kullanılır?</h6>
-                <ol>
-                    <li>Bu QR kodu projeksiyonla sınıfa gösterin</li>
-                    <li>Öğrenciler telefonlarıyla QR kodu okutacak</li>
-                    <li>Açılan sayfada TC kimlik numaralarını girecek</li>
-                    <li>Sistem otomatik olarak giriş/çıkış kaydı alacak</li>
-                    <li>Öğrenci içeride ise çıkış, dışarıda ise giriş yapacak</li>
-                </ol>
-            </div>
-            
-            <!-- İstatistikler -->
-            <div class="stats-section">
-                <h6><i class="fas fa-chart-bar me-2"></i>Bugünün İstatistikleri</h6>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalStudents">-</span>
-                        <span class="stat-label">Toplam Öğrenci</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="studentsInside">-</span>
-                        <span class="stat-label">İçerideki Öğrenci</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalEntries">-</span>
-                        <span class="stat-label">Toplam Giriş</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalExits">-</span>
-                        <span class="stat-label">Toplam Çıkış</span>
-                    </div>
-                </div>
-            </div>
-            
-            <button type="button" class="refresh-btn" id="refreshStatsBtn">
-                <i class="fas fa-sync-alt me-2"></i>İstatistikleri Yenile
-            </button>
         </div>
     </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- QR Code Generator Library - API kullanarak -->
+<!-- QR Code Generator - Simplified -->
 <script>
 class TeacherQRPanel {
     constructor() {
         this.qrUrl = null;
-        
-        this.initElements();
-        this.initEventListeners();
-        this.generateQRCode();
-        this.loadStats();
-        
-        // Her 30 saniyede bir istatistikleri güncelle
-        setInterval(() => {
-            this.loadStats();
-        }, 30000);
-    }
-    
-    initElements() {
         this.qrCodeDiv = document.getElementById('qrcode');
         this.qrUrlSpan = document.getElementById('qrUrl');
-        this.qrTimestamp = document.getElementById('qrTimestamp');
-        this.refreshStatsBtn = document.getElementById('refreshStatsBtn');
         
-        // İstatistik elemanları
-        this.totalStudents = document.getElementById('totalStudents');
-        this.studentsInside = document.getElementById('studentsInside');
-        this.totalEntries = document.getElementById('totalEntries');
-        this.totalExits = document.getElementById('totalExits');
-    }
-    
-    initEventListeners() {
-        this.refreshStatsBtn.addEventListener('click', () => this.loadStats());
+        this.generateQRCode();
     }
     
     generateQRCode() {
@@ -427,17 +365,17 @@ class TeacherQRPanel {
         // QR kod oluştur
         this.createQRCode(this.qrUrl);
         
-        // Bilgileri güncelle
-        this.updateQRInfo();
+        // URL bilgisini güncelle
+        this.qrUrlSpan.textContent = this.qrUrl;
     }
     
     createQRCode(url) {
-        // Önceki QR kodu temizle
+        // Yükleniyor mesajı göster
         this.qrCodeDiv.innerHTML = '<p class="text-muted" style="font-size: 12px; margin: 20px 0;">QR kod oluşturuluyor...</p>';
         
         try {
-            // QR kod için API kullan - daha küçük boyut
-            const qrSize = 180; // 256'dan 180'e küçülttük
+            // QR kod için API kullan
+            const qrSize = 180;
             const encodedUrl = encodeURIComponent(url);
             const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodedUrl}&margin=1`;
             
@@ -447,19 +385,19 @@ class TeacherQRPanel {
             img.alt = 'QR Code';
             img.style.border = 'none';
             img.style.borderRadius = '8px';
-            img.style.width = '160px'; // Sabit genişlik
-            img.style.height = '160px'; // Sabit yükseklik
+            img.style.width = '160px';
+            img.style.height = '160px';
             img.style.objectFit = 'contain';
             img.style.backgroundColor = 'white';
             
-            // Yüklenme event'i
+            // Yüklenme başarılı
             img.onload = () => {
                 this.qrCodeDiv.innerHTML = '';
                 this.qrCodeDiv.appendChild(img);
                 console.log('QR Code generated successfully');
             };
             
-            // Hata event'i
+            // Yüklenme hatası
             img.onerror = () => {
                 console.error('QR Code image loading error');
                 this.qrCodeDiv.innerHTML = '<p class="text-danger" style="font-size: 12px;">QR kod oluşturulamadı!</p>';
@@ -470,61 +408,11 @@ class TeacherQRPanel {
             this.qrCodeDiv.innerHTML = '<p class="text-danger" style="font-size: 12px;">QR kod oluşturulamadı!</p>';
         }
     }
-    
-    updateQRInfo() {
-        this.qrUrlSpan.textContent = this.qrUrl;
-        this.qrTimestamp.textContent = new Date().toLocaleString('tr-TR', {
-            year: 'numeric',
-            month: '2-digit', 
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-    
-    async loadStats() {
-        try {
-            // Burada gerçek istatistik API'si çağrılacak
-            // Şimdilik mock data kullanıyoruz
-            
-            this.refreshStatsBtn.disabled = true;
-            this.refreshStatsBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Yükleniyor...';
-            
-            // Simülasyon için 1 saniye bekle
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Mock data - gerçek API entegrasyonu yapılacak
-            const stats = {
-                total_students: Math.floor(Math.random() * 100) + 50,
-                students_inside: Math.floor(Math.random() * 30) + 10,
-                total_entries: Math.floor(Math.random() * 80) + 20,
-                total_exits: Math.floor(Math.random() * 70) + 15
-            };
-            
-            this.updateStats(stats);
-            
-        } catch (error) {
-            console.error('Stats loading error:', error);
-        } finally {
-            this.refreshStatsBtn.disabled = false;
-            this.refreshStatsBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>İstatistikleri Yenile';
-        }
-    }
-    
-    updateStats(stats) {
-        this.totalStudents.textContent = stats.total_students || '-';
-        this.studentsInside.textContent = stats.students_inside || '-';
-        this.totalEntries.textContent = stats.total_entries || '-';
-        this.totalExits.textContent = stats.total_exits || '-';
-        
-        // Renk güncellemeleri
-        this.studentsInside.style.color = stats.students_inside > 0 ? '#28a745' : '#dc3545';
-    }
 }
 
 // Sayfa yüklendiğinde QR Panel'i başlat
 document.addEventListener('DOMContentLoaded', function() {
-    const panel = new TeacherQRPanel();
+    new TeacherQRPanel();
     console.log('Teacher QR Panel initialized');
 });
 </script>
