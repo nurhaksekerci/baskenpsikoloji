@@ -1,0 +1,519 @@
+{% extends 'auth/base.html' %}
+
+{% block title %}Giriş-Çıkış - Başkent Psikoloji{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkin-container {
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .id-input-section {
+        margin: 20px 0;
+    }
+    
+    .status-section {
+        margin: 30px 0;
+        padding: 20px;
+        border-radius: 15px;
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        display: none;
+    }
+    
+    .student-info {
+        background: rgba(255, 193, 7, 0.1);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        color: #856404;
+    }
+    
+    .status-inside {
+        background: rgba(40, 167, 69, 0.1);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        color: #28a745;
+    }
+    
+    .status-outside {
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        color: #dc3545;
+    }
+    
+    .action-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        padding: 15px 30px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 15px 5px;
+        font-size: 16px;
+    }
+    
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .action-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .btn-entry {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .btn-exit {
+        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    }
+    
+    .history-section {
+        margin: 20px 0;
+        text-align: left;
+    }
+    
+    .history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        margin: 5px 0;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+    }
+    
+    .history-entry {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .history-exit {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    .loading {
+        display: none;
+    }
+    
+    .error-message {
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        color: #dc3545;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        display: none;
+    }
+    
+    .success-message {
+        background: rgba(40, 167, 69, 0.1);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        color: #28a745;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        display: none;
+    }
+    
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    
+    .hidden {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="auth-header">
+        <div class="logo">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <h2>Giriş - Çıkış Sistemi</h2>
+        <p>TC kimlik numaranızla giriş/çıkış yapın</p>
+    </div>
+    
+    <div class="auth-body">
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span id="errorText"></span>
+        </div>
+        
+        <!-- Success Message -->
+        <div id="successMessage" class="success-message">
+            <i class="fas fa-check-circle me-2"></i>
+            <span id="successText"></span>
+        </div>
+        
+        <!-- TC Kimlik No Girişi -->
+        <div id="idInputSection" class="id-input-section">
+            <div class="student-info">
+                <h5><i class="fas fa-id-card me-2"></i>TC Kimlik No</h5>
+                <p class="mb-3">Lütfen TC kimlik numaranızı girin</p>
+                
+                <div class="form-floating">
+                    <input type="text" 
+                           class="form-control" 
+                           id="studentIdInput" 
+                           placeholder="TC Kimlik No"
+                           maxlength="11"
+                           pattern="[0-9]{11}">
+                    <label for="studentIdInput">
+                        <i class="fas fa-id-card me-2"></i>TC Kimlik No (11 hane)
+                    </label>
+                    <div class="invalid-feedback" id="idInputError"></div>
+                </div>
+                
+                <button type="button" class="action-button" id="checkStatusBtn">
+                    <i class="fas fa-search me-2"></i>Durumu Kontrol Et
+                </button>
+                
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Öğrenci Durumu ve İşlemler -->
+        <div id="statusSection" class="status-section">
+            <!-- Öğrenci Bilgileri -->
+            <div class="student-details">
+                <h4 id="studentName">-</h4>
+                <p class="mb-1"><strong>TC No:</strong> <span id="studentId">-</span></p>
+                <p class="mb-1"><strong>Okul:</strong> <span id="studentSchool">-</span></p>
+                <p class="mb-3"><strong>Sınıf:</strong> <span id="studentClassroom">-</span></p>
+            </div>
+            
+            <!-- Mevcut Durum -->
+            <div id="currentStatus" class="status-info">
+                <h5><i class="fas fa-info-circle me-2"></i>Mevcut Durum</h5>
+                <p class="mb-1" id="statusText">-</p>
+                <p class="text-muted" id="lastActionText">-</p>
+            </div>
+            
+            <!-- Giriş/Çıkış Butonları -->
+            <div class="action-buttons">
+                <button type="button" class="action-button" id="toggleAttendanceBtn">
+                    <i id="toggleIcon" class="fas fa-sign-in-alt me-2"></i>
+                    <span id="toggleText">Giriş Yap</span>
+                </button>
+                
+                <button type="button" class="btn btn-secondary" id="changeIdBtn">
+                    <i class="fas fa-edit me-2"></i>TC No Değiştir
+                </button>
+            </div>
+            
+            <!-- Bugünün Geçmişi -->
+            <div id="historySection" class="history-section">
+                <h6><i class="fas fa-history me-2"></i>Bugünün Giriş/Çıkış Geçmişi</h6>
+                <div id="historyList">
+                    <!-- Dinamik olarak doldurulacak -->
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class StudentCheckin {
+    constructor() {
+        this.currentStudent = null;
+        this.storedIdNumber = localStorage.getItem('student_id_number');
+        
+        this.initElements();
+        this.initEventListeners();
+        
+        // URL'den TC kimlik numarası al (QR koddan gelen)
+        this.checkUrlParams();
+        
+        // Eğer localStorage'da TC varsa otomatik kontrol et
+        if (this.storedIdNumber) {
+            this.studentIdInput.value = this.storedIdNumber;
+            this.checkStudentStatus();
+        }
+    }
+    
+    initElements() {
+        // Input section
+        this.idInputSection = document.getElementById('idInputSection');
+        this.studentIdInput = document.getElementById('studentIdInput');
+        this.checkStatusBtn = document.getElementById('checkStatusBtn');
+        this.idInputError = document.getElementById('idInputError');
+        this.loading = document.getElementById('loading');
+        
+        // Status section
+        this.statusSection = document.getElementById('statusSection');
+        this.studentName = document.getElementById('studentName');
+        this.studentId = document.getElementById('studentId');
+        this.studentSchool = document.getElementById('studentSchool');
+        this.studentClassroom = document.getElementById('studentClassroom');
+        this.currentStatus = document.getElementById('currentStatus');
+        this.statusText = document.getElementById('statusText');
+        this.lastActionText = document.getElementById('lastActionText');
+        
+        // Action buttons
+        this.toggleAttendanceBtn = document.getElementById('toggleAttendanceBtn');
+        this.toggleIcon = document.getElementById('toggleIcon');
+        this.toggleText = document.getElementById('toggleText');
+        this.changeIdBtn = document.getElementById('changeIdBtn');
+        
+        // History
+        this.historySection = document.getElementById('historySection');
+        this.historyList = document.getElementById('historyList');
+        
+        // Messages
+        this.errorMessage = document.getElementById('errorMessage');
+        this.errorText = document.getElementById('errorText');
+        this.successMessage = document.getElementById('successMessage');
+        this.successText = document.getElementById('successText');
+    }
+    
+    initEventListeners() {
+        // Input validation
+        this.studentIdInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            this.validateIdNumber();
+        });
+        
+        this.studentIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.checkStudentStatus();
+            }
+        });
+        
+        // Buttons
+        this.checkStatusBtn.addEventListener('click', () => this.checkStudentStatus());
+        this.toggleAttendanceBtn.addEventListener('click', () => this.toggleAttendance());
+        this.changeIdBtn.addEventListener('click', () => this.showIdInput());
+    }
+    
+    checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const idFromUrl = urlParams.get('id_number');
+        
+        if (idFromUrl && /^\d{11}$/.test(idFromUrl)) {
+            this.studentIdInput.value = idFromUrl;
+            localStorage.setItem('student_id_number', idFromUrl);
+            this.checkStudentStatus();
+        }
+    }
+    
+    validateIdNumber() {
+        const idNumber = this.studentIdInput.value.trim();
+        const isValid = /^\d{11}$/.test(idNumber);
+        
+        if (idNumber.length > 0 && !isValid) {
+            this.showInputError('TC kimlik numarası 11 haneli olmalıdır.');
+            return false;
+        } else {
+            this.clearInputError();
+            return isValid;
+        }
+    }
+    
+    showInputError(message) {
+        this.studentIdInput.classList.add('is-invalid');
+        this.idInputError.textContent = message;
+    }
+    
+    clearInputError() {
+        this.studentIdInput.classList.remove('is-invalid');
+        this.idInputError.textContent = '';
+    }
+    
+    showError(message) {
+        this.errorText.textContent = message;
+        this.errorMessage.style.display = 'block';
+        this.successMessage.style.display = 'none';
+    }
+    
+    showSuccess(message) {
+        this.successText.textContent = message;
+        this.successMessage.style.display = 'block';
+        this.errorMessage.style.display = 'none';
+    }
+    
+    hideMessages() {
+        this.errorMessage.style.display = 'none';
+        this.successMessage.style.display = 'none';
+    }
+    
+    showLoading(show = true) {
+        this.loading.style.display = show ? 'block' : 'none';
+        this.checkStatusBtn.disabled = show;
+        this.toggleAttendanceBtn.disabled = show;
+    }
+    
+    async checkStudentStatus() {
+        const idNumber = this.studentIdInput.value.trim();
+        
+        if (!this.validateIdNumber() || idNumber.length !== 11) {
+            this.showInputError('Geçerli bir TC kimlik numarası girin (11 hane).');
+            return;
+        }
+        
+        this.hideMessages();
+        this.showLoading(true);
+        
+        try {
+            const response = await fetch(`/student-status/${idNumber}/`);
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // LocalStorage'a kaydet
+                localStorage.setItem('student_id_number', idNumber);
+                
+                // Öğrenci bilgilerini göster
+                this.currentStudent = data.student;
+                this.displayStudentInfo(data);
+                this.showStatusSection();
+                
+            } else {
+                this.showError(data.message || 'Öğrenci bulunamadı');
+                this.showIdInput();
+            }
+            
+        } catch (error) {
+            console.error('Student status check error:', error);
+            this.showError('Bağlantı hatası. Lütfen tekrar deneyin.');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+    
+    displayStudentInfo(data) {
+        this.studentName.textContent = data.student.full_name;
+        this.studentId.textContent = data.student.id_number;
+        this.studentSchool.textContent = data.student.school;
+        this.studentClassroom.textContent = data.student.classroom;
+        
+        // Mevcut durumu göster
+        this.statusText.textContent = data.current_status === 'içeride' ? 'İçeride' : 'Dışarıda';
+        this.lastActionText.textContent = data.last_time ? 
+            `Son işlem: ${data.last_action} (${new Date(data.last_time).toLocaleString('tr-TR')})` :
+            data.last_action;
+        
+        // Durum rengini ayarla
+        this.currentStatus.className = 'status-info ' + 
+            (data.current_status === 'içeride' ? 'status-inside' : 'status-outside');
+        
+        // Buton metnini ayarla
+        if (data.current_status === 'içeride') {
+            this.toggleIcon.className = 'fas fa-sign-out-alt me-2';
+            this.toggleText.textContent = 'Çıkış Yap';
+            this.toggleAttendanceBtn.className = 'action-button btn-exit';
+        } else {
+            this.toggleIcon.className = 'fas fa-sign-in-alt me-2';
+            this.toggleText.textContent = 'Giriş Yap';
+            this.toggleAttendanceBtn.className = 'action-button btn-entry';
+        }
+        
+        // Bugünün geçmişini göster
+        this.displayHistory(data.entries_today);
+    }
+    
+    displayHistory(entries) {
+        this.historyList.innerHTML = '';
+        
+        if (entries.length === 0) {
+            this.historyList.innerHTML = '<p class="text-muted">Bugün henüz giriş/çıkış yapılmamış.</p>';
+            return;
+        }
+        
+        entries.forEach(entry => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            
+            const action = document.createElement('span');
+            action.className = entry.entry_type === 'entry' ? 'history-entry' : 'history-exit';
+            action.textContent = entry.entry_type_display;
+            
+            const time = document.createElement('span');
+            time.className = 'text-muted';
+            time.textContent = new Date(entry.timestamp).toLocaleTimeString('tr-TR');
+            
+            div.appendChild(action);
+            div.appendChild(time);
+            this.historyList.appendChild(div);
+        });
+    }
+    
+    async toggleAttendance() {
+        if (!this.currentStudent) return;
+        
+        this.hideMessages();
+        this.showLoading(true);
+        
+        try {
+            const response = await fetch('/attendance-toggle/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCsrfToken()
+                },
+                body: JSON.stringify({
+                    id_number: this.currentStudent.id_number
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                this.showSuccess(data.message);
+                
+                // Durumu güncelle - biraz bekle ki kullanıcı mesajı görsün
+                setTimeout(() => {
+                    this.checkStudentStatus();
+                }, 1500);
+                
+            } else {
+                this.showError(data.message || 'İşlem sırasında hata oluştu');
+            }
+            
+        } catch (error) {
+            console.error('Attendance toggle error:', error);
+            this.showError('Bağlantı hatası. Lütfen tekrar deneyin.');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+    
+    showStatusSection() {
+        this.idInputSection.style.display = 'none';
+        this.statusSection.style.display = 'block';
+    }
+    
+    showIdInput() {
+        this.statusSection.style.display = 'none';
+        this.idInputSection.style.display = 'block';
+        this.studentIdInput.focus();
+        this.hideMessages();
+    }
+    
+    getCsrfToken() {
+        const cookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='));
+        return cookie ? cookie.split('=')[1] : '';
+    }
+}
+
+// Sayfa yüklendiğinde sistemi başlat
+document.addEventListener('DOMContentLoaded', function() {
+    const checkin = new StudentCheckin();
+    console.log('Student Check-in system initialized');
+});
+</script>
+{% endblock %}

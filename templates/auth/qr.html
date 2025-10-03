@@ -1,0 +1,531 @@
+{% extends 'auth/base.html' %}
+
+{% block title %}QR Kod - Öğretmen Paneli{% endblock %}
+
+{% block extra_css %}
+<style>
+    .qr-container {
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .qr-code-wrapper {
+        background: linear-gradient(145deg, #ffffff, #f0f2f5);
+        border-radius: 25px;
+        padding: 25px;
+        box-shadow: 
+            0 8px 32px rgba(102, 126, 234, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        margin: 20px auto;
+        max-width: 350px;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .qr-code-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+        background-size: 200% 100%;
+        animation: shimmer 3s ease-in-out infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { background-position: 200% 0; }
+        50% { background-position: -200% 0; }
+    }
+    
+    .qr-header {
+        margin-bottom: 15px;
+    }
+    
+    .qr-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0 0 5px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .qr-subtitle {
+        font-size: 12px;
+        color: #7f8c8d;
+        margin: 0;
+        font-weight: 500;
+    }
+    
+    #qrcode {
+        margin: 15px auto;
+        padding: 15px;
+        background: white;
+        border-radius: 15px;
+        display: inline-block;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border: 2px solid #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    
+    #qrcode:hover {
+        transform: scale(1.02);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+    }
+    
+    #qrcode img {
+        display: block;
+        border-radius: 8px;
+    }
+    
+    .qr-footer {
+        margin-top: 10px;
+    }
+    
+    .qr-status {
+        font-size: 11px;
+        color: #27ae60;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .qr-info {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(102, 126, 234, 0.05));
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+        color: #667eea;
+        backdrop-filter: blur(10px);
+    }
+    
+    .qr-info h6 {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #5a67d8;
+    }
+    
+    .qr-info p {
+        font-size: 13px;
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+    
+    .qr-url {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 11px;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        word-break: break-all;
+    }
+    
+    .qr-instructions {
+        background: linear-gradient(135deg, rgba(40, 167, 69, 0.08), rgba(40, 167, 69, 0.05));
+        border: 1px solid rgba(40, 167, 69, 0.15);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+        color: #28a745;
+    }
+    
+    .qr-instructions h6 {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #219a52;
+    }
+    
+    .qr-instructions ol {
+        margin: 10px 0;
+        padding-left: 20px;
+        text-align: left;
+    }
+    
+    .qr-instructions li {
+        margin: 10px 0;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    
+    .stats-section {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.08), rgba(255, 193, 7, 0.05));
+        border: 1px solid rgba(255, 193, 7, 0.15);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 25px 0;
+        color: #856404;
+    }
+    
+    .stats-section h6 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #8c6c00;
+        text-align: center;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 20px 15px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+        border-radius: 12px;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #ffc107, #ff8c00);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .stat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);
+    }
+    
+    .stat-item:hover::before {
+        opacity: 1;
+    }
+    
+    .stat-number {
+        font-size: 28px;
+        font-weight: 800;
+        display: block;
+        background: linear-gradient(135deg, #8c6c00, #ff8c00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .stat-label {
+        font-size: 11px;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+    
+    .refresh-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        padding: 14px 28px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 20px 5px 10px;
+        font-size: 14px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .refresh-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .refresh-btn:active {
+        transform: translateY(0);
+    }
+    
+    .refresh-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .refresh-btn:hover::before {
+        left: 100%;
+    }
+    
+    .pulse {
+        animation: pulse 3s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 480px) {
+        .qr-code-wrapper {
+            max-width: 300px;
+            padding: 20px;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+        }
+        
+        .refresh-btn {
+            padding: 12px 24px;
+            font-size: 13px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="auth-header">
+        <div class="logo">
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+        <h2>Öğretmen QR Paneli</h2>
+        <p>Öğrencilerin giriş-çıkış QR kodu</p>
+    </div>
+    
+    <div class="auth-body">
+        <!-- QR Kod Görüntüleme -->
+        <div class="qr-container">
+            <div class="qr-code-wrapper pulse">
+                <div class="qr-header">
+                    <h4 class="qr-title">
+                        <i class="fas fa-qrcode"></i>
+                        Giriş-Çıkış QR Kodu
+                    </h4>
+                    <p class="qr-subtitle">Öğrenciler bu kodu okutacak</p>
+                </div>
+                
+                <div id="qrcode"></div>
+                
+                <div class="qr-footer">
+                    <p class="qr-status">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Aktif ve Hazır
+                    </p>
+                </div>
+            </div>
+            
+            <div class="qr-info">
+                <h6><i class="fas fa-info-circle me-2"></i>QR Kod Bilgileri</h6>
+                <p class="mb-1"><strong>URL:</strong></p>
+                <div class="qr-url" id="qrUrl">-</div>
+                <p class="mb-0 mt-2"><strong>Oluşturulma:</strong> <span id="qrTimestamp">-</span></p>
+            </div>
+            
+            <div class="qr-instructions">
+                <h6><i class="fas fa-list-ol me-2"></i>Nasıl Kullanılır?</h6>
+                <ol>
+                    <li>Bu QR kodu projeksiyonla sınıfa gösterin</li>
+                    <li>Öğrenciler telefonlarıyla QR kodu okutacak</li>
+                    <li>Açılan sayfada TC kimlik numaralarını girecek</li>
+                    <li>Sistem otomatik olarak giriş/çıkış kaydı alacak</li>
+                    <li>Öğrenci içeride ise çıkış, dışarıda ise giriş yapacak</li>
+                </ol>
+            </div>
+            
+            <!-- İstatistikler -->
+            <div class="stats-section">
+                <h6><i class="fas fa-chart-bar me-2"></i>Bugünün İstatistikleri</h6>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalStudents">-</span>
+                        <span class="stat-label">Toplam Öğrenci</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="studentsInside">-</span>
+                        <span class="stat-label">İçerideki Öğrenci</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalEntries">-</span>
+                        <span class="stat-label">Toplam Giriş</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalExits">-</span>
+                        <span class="stat-label">Toplam Çıkış</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" class="refresh-btn" id="refreshStatsBtn">
+                <i class="fas fa-sync-alt me-2"></i>İstatistikleri Yenile
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- QR Code Generator Library - API kullanarak -->
+<script>
+class TeacherQRPanel {
+    constructor() {
+        this.qrUrl = null;
+        
+        this.initElements();
+        this.initEventListeners();
+        this.generateQRCode();
+        this.loadStats();
+        
+        // Her 30 saniyede bir istatistikleri güncelle
+        setInterval(() => {
+            this.loadStats();
+        }, 30000);
+    }
+    
+    initElements() {
+        this.qrCodeDiv = document.getElementById('qrcode');
+        this.qrUrlSpan = document.getElementById('qrUrl');
+        this.qrTimestamp = document.getElementById('qrTimestamp');
+        this.refreshStatsBtn = document.getElementById('refreshStatsBtn');
+        
+        // İstatistik elemanları
+        this.totalStudents = document.getElementById('totalStudents');
+        this.studentsInside = document.getElementById('studentsInside');
+        this.totalEntries = document.getElementById('totalEntries');
+        this.totalExits = document.getElementById('totalExits');
+    }
+    
+    initEventListeners() {
+        this.refreshStatsBtn.addEventListener('click', () => this.loadStats());
+    }
+    
+    generateQRCode() {
+        // Giriş-çıkış sayfasının URL'ini oluştur
+        const baseUrl = window.location.origin;
+        this.qrUrl = `${baseUrl}/student-checkin/`;
+        
+        // QR kod oluştur
+        this.createQRCode(this.qrUrl);
+        
+        // Bilgileri güncelle
+        this.updateQRInfo();
+    }
+    
+    createQRCode(url) {
+        // Önceki QR kodu temizle
+        this.qrCodeDiv.innerHTML = '<p class="text-muted" style="font-size: 12px; margin: 20px 0;">QR kod oluşturuluyor...</p>';
+        
+        try {
+            // QR kod için API kullan - daha küçük boyut
+            const qrSize = 180; // 256'dan 180'e küçülttük
+            const encodedUrl = encodeURIComponent(url);
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodedUrl}&margin=1`;
+            
+            // QR kod resmini oluştur
+            const img = document.createElement('img');
+            img.src = qrApiUrl;
+            img.alt = 'QR Code';
+            img.style.border = 'none';
+            img.style.borderRadius = '8px';
+            img.style.width = '160px'; // Sabit genişlik
+            img.style.height = '160px'; // Sabit yükseklik
+            img.style.objectFit = 'contain';
+            img.style.backgroundColor = 'white';
+            
+            // Yüklenme event'i
+            img.onload = () => {
+                this.qrCodeDiv.innerHTML = '';
+                this.qrCodeDiv.appendChild(img);
+                console.log('QR Code generated successfully');
+            };
+            
+            // Hata event'i
+            img.onerror = () => {
+                console.error('QR Code image loading error');
+                this.qrCodeDiv.innerHTML = '<p class="text-danger" style="font-size: 12px;">QR kod oluşturulamadı!</p>';
+            };
+            
+        } catch (error) {
+            console.error('QR Code generation error:', error);
+            this.qrCodeDiv.innerHTML = '<p class="text-danger" style="font-size: 12px;">QR kod oluşturulamadı!</p>';
+        }
+    }
+    
+    updateQRInfo() {
+        this.qrUrlSpan.textContent = this.qrUrl;
+        this.qrTimestamp.textContent = new Date().toLocaleString('tr-TR', {
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    async loadStats() {
+        try {
+            // Burada gerçek istatistik API'si çağrılacak
+            // Şimdilik mock data kullanıyoruz
+            
+            this.refreshStatsBtn.disabled = true;
+            this.refreshStatsBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Yükleniyor...';
+            
+            // Simülasyon için 1 saniye bekle
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Mock data - gerçek API entegrasyonu yapılacak
+            const stats = {
+                total_students: Math.floor(Math.random() * 100) + 50,
+                students_inside: Math.floor(Math.random() * 30) + 10,
+                total_entries: Math.floor(Math.random() * 80) + 20,
+                total_exits: Math.floor(Math.random() * 70) + 15
+            };
+            
+            this.updateStats(stats);
+            
+        } catch (error) {
+            console.error('Stats loading error:', error);
+        } finally {
+            this.refreshStatsBtn.disabled = false;
+            this.refreshStatsBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>İstatistikleri Yenile';
+        }
+    }
+    
+    updateStats(stats) {
+        this.totalStudents.textContent = stats.total_students || '-';
+        this.studentsInside.textContent = stats.students_inside || '-';
+        this.totalEntries.textContent = stats.total_entries || '-';
+        this.totalExits.textContent = stats.total_exits || '-';
+        
+        // Renk güncellemeleri
+        this.studentsInside.style.color = stats.students_inside > 0 ? '#28a745' : '#dc3545';
+    }
+}
+
+// Sayfa yüklendiğinde QR Panel'i başlat
+document.addEventListener('DOMContentLoaded', function() {
+    const panel = new TeacherQRPanel();
+    console.log('Teacher QR Panel initialized');
+});
+</script>
+{% endblock %}
