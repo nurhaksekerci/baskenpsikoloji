@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-prod
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ['baskentpsikoloji.pythonanywhere.com']
 
 # CSRF Configuration
 CSRF_TRUSTED_ORIGINS = [
@@ -135,12 +135,13 @@ USE_TZ = os.getenv('USE_TZ', 'True').lower() == 'true'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = os.getenv('STATIC_URL', '/static/')
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / os.getenv('STATIC_ROOT', 'staticfiles')
 
-MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
-MEDIA_ROOT = BASE_DIR / os.getenv('MEDIA_ROOT', 'media')
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # Email Configuration
@@ -187,12 +188,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
-            'level': os.getenv('LOG_LEVEL', 'INFO'),
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
@@ -200,22 +195,23 @@ LOGGING = {
         },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],
         'level': 'WARNING',
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
-            'level': os.getenv('LOG_LEVEL', 'INFO'),
+            'handlers': ['console'],
+            'level': 'INFO',
             'propagate': False,
         },
         'school': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,
         },
     },
 }
+
 
 # Custom Application Settings
 QR_CODE_SIZE = int(os.getenv('QR_CODE_SIZE', '180'))
@@ -223,9 +219,9 @@ QR_CODE_MARGIN = int(os.getenv('QR_CODE_MARGIN', '1'))
 QR_CODE_CACHE_TIMEOUT = int(os.getenv('QR_CODE_CACHE_TIMEOUT', '3600'))
 
 # NETGSM SMS Settings
-NETGSM_USERNAME = os.getenv('NETGSM_USERNAME', '')
-NETGSM_PASSWORD = os.getenv('NETGSM_PASSWORD', '')
-NETGSM_HEADER = os.getenv('NETGSM_HEADER', '')
+NETGSM_USERNAME = "2426061227"
+NETGSM_PASSWORD = "e6.1s56f"
+NETGSM_HEADER = "KENDNEBOSTN"
 
 # SMS Notification Settings
 SMS_ENABLED = os.getenv('SMS_ENABLED', 'True').lower() == 'true'
