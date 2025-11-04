@@ -29,13 +29,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-prod
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['baskentpsikoloji.pythonanywhere.com']
+ALLOWED_HOSTS = ['baskentpsikoloji.pythonanywhere.com', 'localhost', '127.0.0.1']
 
 # CSRF Configuration
 CSRF_TRUSTED_ORIGINS = [
     'https://baskentpsikoloji.pythonanywhere.com',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000'
+    'http://localhost:8081',
+    'http://127.0.0.1:8081'
 ]
 
 
@@ -219,9 +219,9 @@ QR_CODE_MARGIN = int(os.getenv('QR_CODE_MARGIN', '1'))
 QR_CODE_CACHE_TIMEOUT = int(os.getenv('QR_CODE_CACHE_TIMEOUT', '3600'))
 
 # NETGSM SMS Settings
-NETGSM_USERNAME = "2426061227"
-NETGSM_PASSWORD = "e6.1s56f"
-NETGSM_HEADER = "KENDNEBOSTN"
+NETGSM_USERNAME = "2526060717"
+NETGSM_PASSWORD = "5,781D8"
+NETGSM_HEADER = "2526060717"
 
 # SMS Notification Settings
 SMS_ENABLED = os.getenv('SMS_ENABLED', 'True').lower() == 'true'
